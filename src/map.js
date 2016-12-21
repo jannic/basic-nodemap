@@ -16,8 +16,8 @@ var createMarker = function(latlng, hostname, clients, online) {
     var status = (online) ? "Aktuell " + clients + " Benutzer." : "Knoten ist (vermutlich) offline."
     
     var marker = L.circleMarker(latlng, {radius: 7, weight: 1, color: color, fill: true, fillColor: fillColor, fillOpacity: 1.0});
-    marker.addTo(map);
     marker.bindTooltip(hostname + "<br/>" + status);
+    return marker;
 }
 
 var getJson = function(url, callback)
@@ -37,21 +37,31 @@ var getJson = function(url, callback)
 }
 
 var createNodeMarkers = function(status, data) {
+    var markers = {
+        true: [],
+        false: []
+    };
     for (var i=0; i < data.nodes.length; i++) {
         var node = data.nodes[i];
         
         var clients = (node.statistics !== undefined && node.statistics.clients !== undefined) ? node.statistics.clients : 0;        
         var online = (node.flags !== undefined && node.flags.online !== undefined) ? node.flags.online : false;
         
-        
+
         if (node.nodeinfo !== undefined)
         {
             var nodeinfo = node.nodeinfo;
             if (nodeinfo.location !== undefined && nodeinfo.location.latitude !== undefined && nodeinfo.location.longitude !== undefined) {
                 
-                createMarker([nodeinfo.location.latitude, nodeinfo.location.longitude], nodeinfo.hostname, clients, online);
+                markers[online].push(createMarker([nodeinfo.location.latitude, nodeinfo.location.longitude], nodeinfo.hostname, clients, online));
             }
         }
+    }
+    for(var i=0; i<markers[false].length; i++) {
+        markers[false][i].addTo(map);
+    }
+    for(var i=0; i<markers[true].length; i++) {
+        markers[true][i].addTo(map);
     }
 }
 
